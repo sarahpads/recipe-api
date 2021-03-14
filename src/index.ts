@@ -2,9 +2,13 @@ import "reflect-metadata"
 import { createConnection } from "typeorm"
 import { ApolloServer } from "apollo-server"
 import { buildSchema } from "type-graphql"
+import dotenv from "dotenv"
+
+dotenv.config()
 
 import { RecipeResolver, Recipe } from "./models/Recipe"
 import { FavouriteResolver, Favourite } from "./models/Favourite"
+import verifyToken from "./utils/verify-token"
 
 async function main() {
   await createConnection({
@@ -36,15 +40,13 @@ async function main() {
         return
       }
 
-      const user = req.headers["recipe-app-user"]
-
-      if (!user) {
-        return
-      }
+      const auth = req.headers.authorization || ""
+      const [_, token] = auth.split(' ')
+      const payload = await verifyToken(token)
 
       return {
-        uid: user
-      }
+        user: payload?.sub
+      };
     }
   })
 
